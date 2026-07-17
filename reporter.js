@@ -1,4 +1,4 @@
-// Generates a self-contained HTML report from the job list
+// Generates an email-compatible HTML report (table-based, inline styles — works in Gmail/Outlook)
 import { writeFileSync } from 'fs';
 
 const OUTPUT = 'report.html';
@@ -8,21 +8,37 @@ export function generateReport(jobs) {
 
   const cards = jobs.length
     ? jobs.map((job) => `
-      <article class="card">
-        <div class="card-header">
-          <h2 class="card-title">${esc(job.title)}</h2>
-          ${job.salary ? `<span class="salary">${esc(job.salary)}</span>` : ''}
-        </div>
-        <p class="company">${esc(job.company)}</p>
-        <div class="tags">
-          ${job.tags.slice(0, 6).map((t) => `<span class="tag">${esc(t)}</span>`).join('')}
-        </div>
-        <div class="card-footer">
-          <span class="date">${esc(job.date)}</span>
-          <a class="btn" href="${esc(job.url)}" target="_blank" rel="noopener">View Job →</a>
-        </div>
-      </article>`).join('')
-    : '<p class="empty">No web developer jobs posted in the last 24 hours.</p>';
+      <tr><td style="padding:0 0 12px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;">
+          <tr><td style="padding:20px 24px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="font-size:16px;font-weight:700;color:#0F172A;line-height:1.3;font-family:'Segoe UI',system-ui,sans-serif;">${esc(job.title)}</td>
+                ${job.salary ? `<td align="right" style="white-space:nowrap;vertical-align:top;padding-left:12px;">
+                  <span style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;font-family:'Segoe UI',system-ui,sans-serif;">${esc(job.salary)}</span>
+                </td>` : ''}
+              </tr>
+            </table>
+          </td></tr>
+          <tr><td style="padding:6px 24px 0;font-size:14px;font-weight:500;color:#64748B;font-family:'Segoe UI',system-ui,sans-serif;">${esc(job.company)}</td></tr>
+          <tr><td style="padding:10px 24px 0;">
+            ${job.tags.slice(0, 6).map((t) =>
+              `<span style="display:inline-block;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:4px;padding:3px 8px;font-size:11px;color:#475569;font-weight:500;margin:0 4px 4px 0;font-family:'Segoe UI',system-ui,sans-serif;">${esc(t)}</span>`
+            ).join('')}
+          </td></tr>
+          <tr><td style="padding:12px 24px 16px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #F1F5F9;padding-top:12px;">
+              <tr>
+                <td style="font-size:12px;color:#94A3B8;padding-top:10px;font-family:'Segoe UI',system-ui,sans-serif;">${esc(job.date)}</td>
+                <td align="right" style="padding-top:10px;">
+                  <a href="${esc(job.url)}" target="_blank" rel="noopener" style="background:#4F46E5;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:8px 18px;border-radius:7px;display:inline-block;font-family:'Segoe UI',system-ui,sans-serif;">View Job →</a>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>`).join('')
+    : '<tr><td style="padding:40px 0;text-align:center;color:#94A3B8;font-size:16px;font-family:\'Segoe UI\',system-ui,sans-serif;">No web developer jobs found in this period.</td></tr>';
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -30,163 +46,37 @@ export function generateReport(jobs) {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Job Market Report — ${date}</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: #F1F5F9;
-    color: #0F172A;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh;
-    padding: 2.5rem 1rem;
-  }
-
-  header {
-    max-width: 860px;
-    margin: 0 auto 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: .5rem;
-  }
-
-  .logo {
-    font-size: .7rem;
-    letter-spacing: .18em;
-    color: #4F46E5;
-    text-transform: uppercase;
-    font-weight: 700;
-  }
-
-  h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; line-height: 1.2; }
-  h1 span { color: #4F46E5; }
-
-  .meta { display: flex; gap: 1.5rem; font-size: .85rem; color: #64748B; margin-top: .3rem; }
-  .meta strong { color: #4F46E5; font-weight: 700; }
-
-  .divider {
-    max-width: 860px;
-    margin: 0 auto 1.5rem;
-    height: 1px;
-    background: #E2E8F0;
-  }
-
-  .grid {
-    max-width: 860px;
-    margin: 0 auto;
-    display: grid;
-    gap: .875rem;
-  }
-
-  .card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 14px;
-    padding: 1.375rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: .75rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-    transition: box-shadow .15s, border-color .15s;
-  }
-  .card:hover {
-    box-shadow: 0 4px 16px rgba(79,70,229,.1);
-    border-color: #C7D2FE;
-  }
-
-  .card-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .card-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #0F172A;
-    line-height: 1.3;
-    flex: 1;
-  }
-
-  .salary {
-    background: #EEF2FF;
-    color: #4F46E5;
-    border: 1px solid #C7D2FE;
-    border-radius: 6px;
-    padding: .25rem .65rem;
-    font-size: .74rem;
-    font-weight: 700;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .company { font-size: .875rem; color: #64748B; font-weight: 500; }
-
-  .tags { display: flex; flex-wrap: wrap; gap: .4rem; }
-  .tag {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
-    border-radius: 5px;
-    padding: .2rem .55rem;
-    font-size: .71rem;
-    color: #475569;
-    font-weight: 500;
-  }
-
-  .card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: .25rem;
-    border-top: 1px solid #F1F5F9;
-  }
-
-  .date { font-size: .75rem; color: #94A3B8; }
-
-  .btn {
-    background: #4F46E5;
-    color: #fff;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: .8rem;
-    padding: .45rem 1.1rem;
-    border-radius: 7px;
-    transition: background .15s;
-  }
-  .btn:hover { background: #4338CA; }
-
-  .empty {
-    max-width: 860px;
-    margin: 0 auto;
-    color: #94A3B8;
-    font-size: 1rem;
-    padding: 4rem 0;
-    text-align: center;
-  }
-
-  footer {
-    max-width: 860px;
-    margin: 3rem auto 0;
-    text-align: center;
-    font-size: .73rem;
-    color: #CBD5E1;
-  }
-</style>
 </head>
-<body>
-  <header>
-    <p class="logo">Job Market Monitor</p>
-    <h1>Remote <span>Web Developer</span> Jobs</h1>
-    <div class="meta">
-      <span>Date: <strong>${date}</strong></span>
-      <span>Last 24h: <strong>${jobs.length} listing${jobs.length !== 1 ? 's' : ''}</strong></span>
-    </div>
-  </header>
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:'Segoe UI',system-ui,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5F9;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-  <div class="divider"></div>
-  <main class="grid">${cards}</main>
+        <!-- Header -->
+        <tr><td style="padding:0 0 8px;">
+          <p style="margin:0;font-size:10px;letter-spacing:2.5px;color:#4F46E5;text-transform:uppercase;font-weight:700;font-family:'Segoe UI',system-ui,sans-serif;">JOB MARKET MONITOR</p>
+        </td></tr>
+        <tr><td style="padding:0 0 6px;">
+          <h1 style="margin:0;font-size:28px;font-weight:800;color:#0F172A;line-height:1.2;font-family:'Segoe UI',system-ui,sans-serif;">Remote <span style="color:#4F46E5;">Web Developer</span> Jobs</h1>
+        </td></tr>
+        <tr><td style="padding:0 0 20px;font-size:13px;color:#64748B;font-family:'Segoe UI',system-ui,sans-serif;">
+          Date: <strong style="color:#4F46E5;">${date}</strong> &nbsp;&nbsp;&nbsp; Last 7d: <strong style="color:#4F46E5;">${jobs.length} listing${jobs.length !== 1 ? 's' : ''}</strong>
+        </td></tr>
 
-  <footer>Generated by job-market-monitor • Source: RemoteOK API</footer>
+        <!-- Divider -->
+        <tr><td style="padding:0 0 20px;"><div style="height:1px;background:#E2E8F0;"></div></td></tr>
+
+        <!-- Cards -->
+        ${cards}
+
+        <!-- Footer -->
+        <tr><td style="padding:32px 0 0;text-align:center;font-size:11px;color:#CBD5E1;font-family:'Segoe UI',system-ui,sans-serif;">
+          Generated by job-market-monitor &bull; Source: RemoteOK API
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
 </body>
 </html>`;
 
@@ -195,7 +85,6 @@ export function generateReport(jobs) {
   return html;
 }
 
-// Escape HTML special chars to prevent XSS from API data
 function esc(str) {
   return String(str)
     .replace(/&/g, '&amp;')
