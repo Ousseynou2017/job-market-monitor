@@ -1,0 +1,14 @@
+{
+  "name": "job-market-monitor",
+  "version": "1.0.0",
+  "description": "Scrapes remote job listings and sends a daily HTML report by email",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js --send-email",
+    "report": "node index.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.13"
+  }
+}
